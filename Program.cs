@@ -1,4 +1,5 @@
 using CrashAnalytics.Authentication;
+using CrashAnalytics.Utils;
 using Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -38,14 +39,20 @@ builder.Services.AddSwaggerGen(c =>
     c.AddSecurityRequirement(requirement);
 });
 
-
-
-
+var envReader = new EnvReader();
+envReader.Build();
 
 var configuration = builder.Configuration;
-builder.Services.AddDbContext<ApplicationContext>(options =>
-    options.UseNpgsql(configuration.GetConnectionString("DatabaseConnection")));
+var databaseConnection = string.Format(configuration.GetConnectionString("DatabaseConnection"), new string[] {
+    envReader.GetValue("DB_CONTAINER_NAME"),
+    envReader.GetValue("DB_PORT"),
+    envReader.GetValue("DB_NAME"),
+    envReader.GetValue("DB_USER"),
+    envReader.GetValue("DB_PASSWORD"),
+});
 
+builder.Services.AddDbContext<ApplicationContext>(options =>
+    options.UseNpgsql(databaseConnection));
 
 var app = builder.Build();
 

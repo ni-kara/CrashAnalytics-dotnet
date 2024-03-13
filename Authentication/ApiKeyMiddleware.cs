@@ -1,4 +1,6 @@
-﻿namespace CrashAnalytics.Authentication
+﻿using CrashAnalytics.Utils;
+
+namespace CrashAnalytics.Authentication
 {
     public class ApiKeyMiddleware
     {
@@ -19,8 +21,12 @@
                 return;
             }
 
-            var appSettings = context.RequestServices.GetRequiredService<IConfiguration>();
-            var apiKey = appSettings.GetValue<string>(APIKEY);
+            //var appSettings = context.RequestServices.GetRequiredService<IConfiguration>();
+            // var apiKey = appSettings.GetValue<string>(APIKEY);
+
+            var envReader = new EnvReader();
+            envReader.Build();
+            var apiKey = envReader.GetValue("API_KEY");
 
             if (!apiKey.Equals(apiKeyHeader))
             {
