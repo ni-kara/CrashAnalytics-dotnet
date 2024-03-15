@@ -5,27 +5,20 @@ using System.Text.Json.Serialization;
 
 namespace CrashAnalytics.Models
 {
-    [Table("crashes")]
     public class CrashDTO : Crash
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        [Column("id")]
-
         public Guid Id { get; set; }
 
-        [Column("created_at")]
-        public DateTime CreatedAt { get; set; }
+       public DateTime CreatedAt { get; set; }
 
-        [JsonIgnore]
-        [Column("project_id")]
+       [JsonIgnore]
         public Guid ProjectId { get; set; }
         [JsonIgnore]
         public virtual ProjectDTO Project { get; set; } = null!;
 
-
         public CrashDTO()
         {        }
+
         public CrashDTO(Crash crash) : this()
         {
             this.Message = crash.Message;

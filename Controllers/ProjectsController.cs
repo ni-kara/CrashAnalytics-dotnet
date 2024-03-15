@@ -9,12 +9,12 @@ using System.Xml.Linq;
 namespace CrashAnalytics.Controllers
 {
     [ApiController]
-    [Route("api/projects")]
-    public class ProjectController: ControllerBase
+    [Route("api/[controller]")]
+    public class ProjectsController: ControllerBase
     {
         private readonly ApplicationContext _context;
 
-        public ProjectController(ApplicationContext context)
+        public ProjectsController(ApplicationContext context)
         {
             _context = context;
         }
@@ -26,7 +26,7 @@ namespace CrashAnalytics.Controllers
 
             return Ok(projects);
         }
-
+        
         [HttpGet("{projectId}")]
         public async Task<ActionResult<ProjectDTO>> GetProjectById(Guid projectId)
         {
@@ -43,14 +43,21 @@ namespace CrashAnalytics.Controllers
         [HttpPost]
         public async Task<ActionResult<ProjectDTO>> PostProject(Project project)
         {
+            if (project == null)
+                return BadRequest();
+
+            var p = await _context.Projects.FirstOrDefaultAsync(p => p.Name.Equals(project.Name));
+            if (p != null)
+                return UnprocessableEntity("The name of the project already exists");
+            
             ProjectDTO projectDTO = new ProjectDTO();
-            projectDTO.Name = project.Name; 
+            projectDTO.Name = project.Name;
 
             _context.Projects.Add(projectDTO);
 
-            await _context.SaveChangesAsync(); 
+            await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetProjectById), new { id = projectDTO.Id }, projectDTO);
+            return CreatedAtAction(nameof(GetProjectById), new { projectId = projectDTO.Id }, projectDTO);
         }      
 
         [HttpPut("{projectId}")]
@@ -58,6 +65,11 @@ namespace CrashAnalytics.Controllers
         {
             if (project == null)
                 return BadRequest();
+
+            var p = await _context.Projects.FirstOrDefaultAsync(p => p.Name.Equals(project.Name));
+            if (p != null)
+                return Conflict("The name of the project already exists");
+
 
             var projectDTO = await _context.Projects.FindAsync(projectId);
 
@@ -70,7 +82,7 @@ namespace CrashAnalytics.Controllers
 
             await _context.SaveChangesAsync();
 
-            return Accepted();
+            return AcceptedAtAction(nameof(GetProjectById), new { projectId = projectDTO.Id }, projectDTO);
         }
 
         [HttpDelete]

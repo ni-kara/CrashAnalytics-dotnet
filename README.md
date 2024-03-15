@@ -43,9 +43,6 @@ dotnet ef database update
 Database drop
 
 ```
-dotnet ef database update
+dotnet ef database drop
 ```
 
-### Know Issues
-
-Cannot add via migration in the IDs of the table the `uuid_generate_v4()`, it should be add it manualy.

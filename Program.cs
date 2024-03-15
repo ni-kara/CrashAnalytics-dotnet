@@ -2,6 +2,7 @@ using CrashAnalytics.Authentication;
 using CrashAnalytics.Utils;
 using Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 using Microsoft.OpenApi.Models;
 using System.Text;
 
@@ -14,7 +15,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-
     c.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
     {
         Description = "The API Key to access the API",

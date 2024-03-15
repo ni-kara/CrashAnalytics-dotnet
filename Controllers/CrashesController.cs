@@ -8,16 +8,41 @@ using System.Collections.Immutable;
 namespace CrashAnalytics.Controllers
 {
     [ApiController]
-    [Route("api/projects")]
-    public class CrashController : ControllerBase
+    [Route("api/[controller]")]
+    public class CrashesController : ControllerBase
     {
         private readonly ApplicationContext _context;
 
-        public CrashController(ApplicationContext context)
+        public CrashesController(ApplicationContext context)
         {
             _context = context; 
         }
 
+        [HttpPost("{projectId}/crash")]
+        public async Task<ActionResult<ProjectDTO>> PostCrash(Guid projectId, Crash crash)
+        {            
+            if (crash == null)
+                return BadRequest("Invalid crash data");
+
+            var project = await _context.Projects.FindAsync(projectId);
+
+            if (project == null)
+                return NotFound("Project does not exist");
+
+
+            var crashDTO = new CrashDTO(crash);
+            crashDTO.Project = project;
+            crashDTO.ProjectId = project.Id;
+
+
+            _context.Crashes.Add(crashDTO);
+
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetCrashById), new { projectId = projectId, crashId = crashDTO.Id }, crashDTO);
+        
+        }
+        
         [HttpGet("{projectId}/crashes")]
         public async Task<ActionResult<IEnumerable<CrashDTO>>> GetCrashes(Guid projectId)
         {
@@ -38,41 +63,19 @@ namespace CrashAnalytics.Controllers
 
             if (project == null)
                 return NotFound("Project does not exist");
-
+            
             var crash = await _context.Crashes
                 .Include(p => p.Project)
                 .Where(w=> w.ProjectId.Equals(projectId) && w.Id.Equals(crashId))
                 .SingleOrDefaultAsync();
-
+            
             if (crash == null)
                 return NotFound("Crash does not exist");
 
             return Ok(crash);
         }
 
-        [HttpPost("{projectId}/crash")]
-        public async Task<ActionResult<ProjectDTO>> PostCrash(Guid projectId, Crash crash)
-        {
-            if (crash == null)
-                return BadRequest("Invalid crash data");
-            
-            var project = await _context.Projects.FindAsync(projectId);
-
-            if (project == null)
-                return NotFound("Project does not exist");
-            
-
-            var crashDTO = new CrashDTO(crash);
-            crashDTO.Project = project;
-            crashDTO.ProjectId = project.Id;
-
-
-            _context.Crashes.Add(crashDTO);
-            
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetCrashById), new { projectId = projectId, crashId = crashDTO.Id }, crashDTO);
-        }
+        
 
         [HttpPut("{projectId}/crashes/{crashId}")]
         public async Task<ActionResult<ProjectDTO>> PutCrash(Guid projectId, Guid crashId, Crash crash)
@@ -122,6 +125,6 @@ namespace CrashAnalytics.Controllers
 
             return NoContent();
         }
-
+        
     }
 }

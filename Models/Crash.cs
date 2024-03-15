@@ -2,25 +2,25 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using CrashAnalytics.Utils;
+using System.ComponentModel;
 
 namespace CrashAnalytics.Models
 {
     public class Crash 
     {
-        [Required(ErrorMessage = "The DeviceType is required")]
-        [Column("type")]
         public DeviceType Type { get; set; }
 
-        [Required(ErrorMessage = "The Version is required")]
-        [MaxLength(15)]
-        [Column("version")]
         public string Version { get; set; }
 
-        [Required(ErrorMessage = "An Message is required")]
-        [Column("message")]
         public string Message { get; set; }
 
-        public enum DeviceType { Android, iOS };
+        public enum DeviceType {
+            [Description("Android")]
+            Android,
+            [Description("iOS")]
+            iOS
+        };
 
         public Crash()
         {        }
