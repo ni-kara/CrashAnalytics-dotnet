@@ -32,12 +32,14 @@ namespace CrashAnalytics.Controllers
         {
             var project = await _context.Projects
                 .Include(p => p.Crashes)
-                .SingleOrDefaultAsync(s => s.Id.Equals(projectId));
+                .Select(p => new { p.Id, p.Name, p.CreatedAt })
+                .SingleOrDefaultAsync(s => s.Id.Equals(projectId))
+                ;
 
             if (project == null)
                 return NotFound("The project ID does not exist");
 
-            return project;
+            return Ok(project);
         }
 
         [HttpPost]

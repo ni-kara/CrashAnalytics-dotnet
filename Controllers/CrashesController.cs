@@ -8,7 +8,7 @@ using System.Collections.Immutable;
 namespace CrashAnalytics.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/{projectId}/[controller]")]
     public class CrashesController : ControllerBase
     {
         private readonly ApplicationContext _context;
@@ -18,7 +18,7 @@ namespace CrashAnalytics.Controllers
             _context = context; 
         }
 
-        [HttpPost("{projectId}/crash")]
+        [HttpPost("crash")]
         public async Task<ActionResult<ProjectDTO>> PostCrash(Guid projectId, Crash crash)
         {            
             if (crash == null)
@@ -43,20 +43,35 @@ namespace CrashAnalytics.Controllers
         
         }
         
-        [HttpGet("{projectId}/crashes")]
-        public async Task<ActionResult<IEnumerable<CrashDTO>>> GetCrashes(Guid projectId)
+        [HttpGet("crashes")]
+        public async Task<ActionResult<IEnumerable<CrashDTO>>> GetCrashes(Guid projectId, [FromQuery] int indexPage=1, [FromQuery] int sizePage=10)
         {
             var project = await _context.Projects
+                .Where(p => p.Id.Equals(projectId))
                 .Include(p => p.Crashes)
-                .SingleOrDefaultAsync(p => p.Id.Equals(projectId));
-
+                .SingleOrDefaultAsync();
+            
             if (project == null)
                 return NotFound("Project does not exist");
 
-            return Ok(project.Crashes);
+            var crashes = project.Crashes.OrderByDescending(p => p.CreatedAt);
+
+            var totalCount = crashes.Count();
+            var totalPages = (int)Math.Ceiling((double)totalCount / sizePage);
+
+            var crashesList = crashes.Skip((indexPage - 1) * sizePage).Take(sizePage);
+            var result = new
+            {
+                TotalCount = totalCount,
+                TotalPages = totalPages,
+                CurrentPage = indexPage,
+                PageSize = crashesList.Count(),
+                Crashes = crashesList.ToList(),
+            };
+            return Ok(result);
         }
 
-        [HttpGet("{projectId}/crashes/{crashId}")]
+        [HttpGet("crashes/{crashId}")]
         public async Task<ActionResult<IEnumerable<CrashDTO>>> GetCrashById(Guid projectId, Guid crashId)
         {
             var project = await _context.Projects.FindAsync(projectId);
@@ -77,7 +92,7 @@ namespace CrashAnalytics.Controllers
 
         
 
-        [HttpPut("{projectId}/crashes/{crashId}")]
+        [HttpPut("crashes/{crashId}")]
         public async Task<ActionResult<ProjectDTO>> PutCrash(Guid projectId, Guid crashId, Crash crash)
         {
             if (crash == null)
@@ -105,7 +120,7 @@ namespace CrashAnalytics.Controllers
         }
 
 
-        [HttpDelete("{projectId}/crashes/{crashId}")]
+        [HttpDelete("crashes/{crashId}")]
         public async Task<ActionResult<ProjectDTO>> DeleteCrash(Guid projectId, Guid crashId)
         {;
 
