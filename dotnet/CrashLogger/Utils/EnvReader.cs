@@ -5,12 +5,12 @@ namespace CrashAnalytics.Utils
     public class EnvReader
     {
         private Dictionary<string, string> envKeys;
-        public void Build(string filename=".env")
+        public void Build(string filename = ".env")
         {
             var path = Path.Combine(Environment.CurrentDirectory, filename);
-            
+            Console.WriteLine($"\n{path}\n");
             if (!File.Exists(path))
-                throw new Exception();
+                throw new FileNotFoundException("The .env file does not exist");
 
             envKeys = new Dictionary<string, string>();
 
@@ -28,7 +28,7 @@ namespace CrashAnalytics.Utils
                     string value = parts[1].Trim();
 
                     // Set the environment variable
-                    envKeys.Add(key, value);    
+                    envKeys.Add(key, value);
                 }
             }
         }

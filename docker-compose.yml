@@ -1,0 +1,58 @@
+version: '3.1'
+
+services:
+  postgres_db:
+    image: postgres
+    container_name: ${DB_CONTAINER_NAME}
+    ports:
+      - "5432:${DB_PORT}"
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - ./postgres/local_pgdata:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    ports:
+      - "5003:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    volumes:
+      - ./postgres/pgadmin-data:/var/lib/pgadmin
+    networks:
+      - backend
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+
+  dotnet:
+    build:
+      context: ./dotnet
+      dockerfile: ./dotnet.dockerfile
+    container_name: dotnet-container
+    ports:
+      - "5000:80"
+    networks:
+      - backend
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+
+volumes:
+  local_pgdata:
+  pgadmin-data:
+
+networks:
+  backend:
+    driver: bridge

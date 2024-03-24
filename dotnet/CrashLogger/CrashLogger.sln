@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CrashAnalytics", "CrashAnalytics.csproj", "{BC72D81B-6124-4F2A-87CE-3DE13699B4D1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CrashLogger", "CrashLogger.csproj", "{BC72D81B-6124-4F2A-87CE-3DE13699B4D1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

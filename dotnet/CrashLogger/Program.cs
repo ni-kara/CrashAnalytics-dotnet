@@ -1,5 +1,6 @@
 using CrashAnalytics.Authentication;
 using CrashAnalytics.Utils;
+using CrashLogger.Utils;
 using Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
@@ -55,6 +56,8 @@ builder.Services.AddDbContext<ApplicationContext>(options =>
     options.UseNpgsql(databaseConnection));
 
 var app = builder.Build();
+
+DatabaseServiceManagement.MigrationInitialization(app);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
