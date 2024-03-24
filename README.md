@@ -1,48 +1,55 @@
-# Crash Analytics
+# Crash Logger
 
-The CrashAnalytics is a dotnet REST Api project
+The Crash Logger is a dotnet REST API project with postgres.
+
+## Dev Stack
+
+- .NET 6
+  - Entity Framework
+- postgres
+
+## Build
+
+### Step 1
+
+Clone the project
+
+```
+https://github.com/ni-kara/CrashLogger-dotnet.git
+```
+
+### Step 2
+
+Set up the `.env` files that is located in the root directory.
+
+### Step 3
+
+Run the command
+
+```
+docker-compose up --build
+```
 
 ## Database
 
-Database: Postgres
+In the project's initialisation the tables are created in the databases
 
-### Schema
-
-```SQL
-Table project
-    Id          |   Guid
-    Name        |   string
-    CreatedAt   |   DateTime
-```
+### Scheme
 
 ```SQL
-Table crash
-    Id          |   Guid
-    Name        |   string
-    CreatedAt   |   DateTime
-    ProjectId   |   Guid        [Fk]
-    Message     |   string
-    Version     |   string      [max(15)]
-    Type        |   Enum        [Enum{Android | iOS}]
+Table projects
+    id           |   Guid
+    name         |   string
+    created_at   |   DateTime
 ```
 
-### Migration
-
-Create Migration
-
+```SQL
+Table crashes
+    id          |   Guid
+    name        |   string
+    createdAt   |   DateTime
+    message     |   string
+    version     |   string      [max(15)]
+    type        |   Enum        [Enum{Android | iOS}]
+    projectId   |   Guid        [Fk]
 ```
-dotnet ef migrations add {migration-name}
-```
-
-Update database with migration scheme
-
-```
-dotnet ef database update
-```
-
-Database drop
-
-```
-dotnet ef database drop
-```
-
