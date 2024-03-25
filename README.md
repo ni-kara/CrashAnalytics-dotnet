@@ -20,9 +20,27 @@ https://github.com/ni-kara/CrashLogger-dotnet.git
 
 ### Step 2
 
-Set up the `.env` files that is located in the root directory.
-
+1. Set up the `.env` file that is located in the `root` directory. 
+2. Set up the `.env` file that is located in the `CrashLogger` directory. `root > dotnet > CrashLogger`
 ### Step 3
+```
+cd dotnet/CrashLogger
+```
+Create migration
+```
+dotnet ef migrations add {migration-name}
+```
+#### In case of `dotnet ef` does not exist
+```
+export PATH="$PATH:/root/.dotnet/tools" # ONLY FOR LINUX
+```
+---
+Install `dotnet ef`
+```
+dotnet tool install --global dotnet-ef --version 6.*
+```
+
+### Step 4
 
 Run the command
 

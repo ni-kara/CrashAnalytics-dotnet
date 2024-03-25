@@ -14,21 +14,16 @@ COPY ./CrashLogger .
 # Build the application
 RUN dotnet publish -c Release -o out
 
-COPY initializeDB.sh ./
-RUN chmod +x initializeDB.sh
-
-ENTRYPOINT ["./initializeDB.sh"]
-
-
 # Build the runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:6.0-alpine AS runtime
 
 WORKDIR /app
 
 COPY --from=build /app/out ./
+
 COPY --from=build /app/Migrations ./
 
-COPY ./CrashLogger/*.env ./
+COPY --from=build /app/*.env ./
 
 COPY general.sh ./
 RUN chmod +x general.sh

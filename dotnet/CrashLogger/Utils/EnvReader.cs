@@ -8,7 +8,7 @@ namespace CrashAnalytics.Utils
         public void Build(string filename = ".env")
         {
             var path = Path.Combine(Environment.CurrentDirectory, filename);
-            Console.WriteLine($"\n{path}\n");
+
             if (!File.Exists(path))
                 throw new FileNotFoundException("The .env file does not exist");
 
