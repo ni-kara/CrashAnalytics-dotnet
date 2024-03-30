@@ -13,7 +13,8 @@ services:
     volumes:
       - ./postgres/local_pgdata:/var/lib/postgresql/data
     networks:
-      - backend
+      - db_network
+    restart: always
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
@@ -31,7 +32,7 @@ services:
     volumes:
       - ./postgres/pgadmin-data:/var/lib/pgadmin
     networks:
-      - backend
+      - db_network
     depends_on:
       postgres_db:
         condition: service_healthy
@@ -42,17 +43,29 @@ services:
       dockerfile: ./dotnet.dockerfile
     container_name: dotnet-container
     ports:
-      - "5000:80"
+      - "5000:5000"
     networks:
-      - backend
+      - db_network
+      - redis_network
     depends_on:
       postgres_db:
         condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis_container
+    restart: always
+    ports:
+      - 6379:6379
+    networks:
+      - redis_network
 
 volumes:
   local_pgdata:
   pgadmin-data:
 
 networks:
-  backend:
+  db_network:
+    driver: bridge  
+  redis_network:
     driver: bridge

@@ -1,4 +1,5 @@
 ﻿using CrashAnalytics.Models;
+using CrashLogger.Services;
 using Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,12 +11,14 @@ namespace CrashAnalytics.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ProjectsController: ControllerBase
+    public class ProjectsController : ControllerBase
     {
+        private readonly ICacheService _cacheService;
         private readonly ApplicationContext _context;
 
-        public ProjectsController(ApplicationContext context)
+        public ProjectsController(ICacheService cacheService, ApplicationContext context)
         {
+            _cacheService = cacheService;
             _context = context;
         }
 
@@ -26,19 +29,31 @@ namespace CrashAnalytics.Controllers
 
             return Ok(projects);
         }
-        
+
         [HttpGet("{projectId}")]
         public async Task<ActionResult<ProjectDTO>> GetProjectById(Guid projectId)
         {
+
+            var cacheData = _cacheService.GetData<ProjectDTO>(projectId.ToString());
+
+            if (cacheData != null)
+            {
+
+                Console.WriteLine("\nReturn: Cached Data\n");
+                Console.WriteLine($"\nReturn: {cacheData} \n");
+                return Ok(cacheData);
+            }
+
             var project = await _context.Projects
                 .Include(p => p.Crashes)
-                .Select(p => new { p.Id, p.Name, p.CreatedAt })
-                .SingleOrDefaultAsync(s => s.Id.Equals(projectId))
-                ;
+                .SingleOrDefaultAsync(s => s.Id.Equals(projectId));
 
             if (project == null)
                 return NotFound("The project ID does not exist");
 
+            _cacheService.SetData(projectId.ToString(), project, DateTimeOffset.Now.AddSeconds(10));
+
+            Console.WriteLine("\nReturn: DB Data\n");
             return Ok(project);
         }
 
@@ -51,7 +66,7 @@ namespace CrashAnalytics.Controllers
             var p = await _context.Projects.FirstOrDefaultAsync(p => p.Name.Equals(project.Name));
             if (p != null)
                 return UnprocessableEntity("The name of the project already exists");
-            
+
             ProjectDTO projectDTO = new ProjectDTO();
             projectDTO.Name = project.Name;
 
@@ -60,7 +75,7 @@ namespace CrashAnalytics.Controllers
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetProjectById), new { projectId = projectDTO.Id }, projectDTO);
-        }      
+        }
 
         [HttpPut("{projectId}")]
         public async Task<ActionResult<ProjectDTO>> PutProject(Guid projectId, Project project)
@@ -78,7 +93,7 @@ namespace CrashAnalytics.Controllers
             if (projectDTO == null)
                 return NotFound("The project does not exist");
 
-            projectDTO.Name = project.Name;            
+            projectDTO.Name = project.Name;
 
             _context.Entry(projectDTO).State = EntityState.Modified;
 
@@ -91,7 +106,7 @@ namespace CrashAnalytics.Controllers
         public async Task<IActionResult> DeleteProject(Guid id)
         {
             var project = await _context.Projects.FindAsync(id);
-            
+
             if (project == null)
                 return NotFound();
 

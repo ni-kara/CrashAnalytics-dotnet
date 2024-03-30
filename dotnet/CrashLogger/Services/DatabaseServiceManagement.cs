@@ -1,7 +1,7 @@
 ﻿using Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace CrashLogger.Utils
+namespace CrashLogger.Services
 {
     public static class DatabaseServiceManagement
     {

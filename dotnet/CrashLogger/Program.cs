@@ -1,6 +1,6 @@
 using CrashAnalytics.Authentication;
 using CrashAnalytics.Utils;
-using CrashLogger.Utils;
+using CrashLogger.Services;
 using Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
@@ -54,6 +54,8 @@ var databaseConnection = string.Format(configuration.GetConnectionString("Databa
 
 builder.Services.AddDbContext<ApplicationContext>(options =>
     options.UseNpgsql(databaseConnection));
+
+builder.Services.AddScoped<ICacheService, CacheService>();
 
 var app = builder.Build();
 
