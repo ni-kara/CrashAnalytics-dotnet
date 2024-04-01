@@ -4,6 +4,7 @@ using Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Models;
+using Pipelines.Sockets.Unofficial.Arenas;
 using System.Diagnostics;
 using System.Xml.Linq;
 
@@ -25,8 +26,15 @@ namespace CrashAnalytics.Controllers
         [HttpGet()]
         public async Task<ActionResult<IEnumerable<ProjectDTO>>> GetProjects()
         {
+            var cachedData = _cacheService.GetData<IEnumerable<ProjectDTO>>("projects");
+
+            if (cachedData != null)
+                return Ok(cachedData);
+            
             var projects = await _context.Projects.Select(p => new { p.Id, p.Name, p.CreatedAt }).ToListAsync();
 
+            _cacheService.SetData("projects", projects, DateTimeOffset.Now.AddSeconds(10));
+          
             return Ok(projects);
         }
 
@@ -34,15 +42,11 @@ namespace CrashAnalytics.Controllers
         public async Task<ActionResult<ProjectDTO>> GetProjectById(Guid projectId)
         {
 
-            var cacheData = _cacheService.GetData<ProjectDTO>(projectId.ToString());
+            var cachedData = _cacheService.GetData<ProjectDTO>(projectId.ToString());
 
-            if (cacheData != null)
-            {
-
-                Console.WriteLine("\nReturn: Cached Data\n");
-                Console.WriteLine($"\nReturn: {cacheData} \n");
-                return Ok(cacheData);
-            }
+            if (cachedData != null)
+                return Ok(cachedData);
+            
 
             var project = await _context.Projects
                 .Include(p => p.Crashes)
@@ -64,6 +68,7 @@ namespace CrashAnalytics.Controllers
                 return BadRequest();
 
             var p = await _context.Projects.FirstOrDefaultAsync(p => p.Name.Equals(project.Name));
+
             if (p != null)
                 return UnprocessableEntity("The name of the project already exists");
 
@@ -74,6 +79,8 @@ namespace CrashAnalytics.Controllers
 
             await _context.SaveChangesAsync();
 
+            _cacheService.RemoveData("projects");
+
             return CreatedAtAction(nameof(GetProjectById), new { projectId = projectDTO.Id }, projectDTO);
         }
 
@@ -83,10 +90,9 @@ namespace CrashAnalytics.Controllers
             if (project == null)
                 return BadRequest();
 
-            var p = await _context.Projects.FirstOrDefaultAsync(p => p.Name.Equals(project.Name));
-            if (p != null)
+            var projectWithUserName = await _context.Projects.FirstOrDefaultAsync(p => p.Name.Equals(project.Name));
+            if (projectWithUserName != null)
                 return Conflict("The name of the project already exists");
-
 
             var projectDTO = await _context.Projects.FindAsync(projectId);
 
@@ -99,13 +105,17 @@ namespace CrashAnalytics.Controllers
 
             await _context.SaveChangesAsync();
 
+            // Remove cached Projects
+            _cacheService.RemoveData("projects");
+            _cacheService.RemoveData(projectId.ToString());
+
             return AcceptedAtAction(nameof(GetProjectById), new { projectId = projectDTO.Id }, projectDTO);
         }
 
-        [HttpDelete]
-        public async Task<IActionResult> DeleteProject(Guid id)
+        [HttpDelete("{projectId}")]
+        public async Task<IActionResult> DeleteProject(Guid projectId)
         {
-            var project = await _context.Projects.FindAsync(id);
+            var project = await _context.Projects.FindAsync(projectId);
 
             if (project == null)
                 return NotFound();
@@ -113,6 +123,10 @@ namespace CrashAnalytics.Controllers
             _context.Projects.Remove(project);
 
             await _context.SaveChangesAsync();
+
+            // Remove cached Projects
+            _cacheService.RemoveData("projects");
+            _cacheService.RemoveData(projectId.ToString());
 
             return NoContent();
         }
