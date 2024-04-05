@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Models;
 using System.Collections.Immutable;
+using System.Diagnostics;
 
 namespace CrashAnalytics.Controllers
 {
@@ -44,33 +45,56 @@ namespace CrashAnalytics.Controllers
             return CreatedAtAction(nameof(GetCrashById), new { projectId = projectId, crashId = crashDTO.Id }, crashDTO);
         }
 
+        private const int defaultIndexPage = 1;
+        private const int defaultSizePage = 10;
         [HttpGet()]
-        public async Task<ActionResult<IEnumerable<CrashDTO>>> GetCrashes(Guid projectId, [FromQuery] int indexPage = 1, [FromQuery] int sizePage = 10)
+        public async Task<ActionResult<IEnumerable<CrashDTO>>> GetCrashes1(Guid projectId, [FromQuery] int indexPage = defaultIndexPage, [FromQuery] int sizePage = defaultSizePage, Crash.DeviceType? type = null)
         {
-            var project = await _context.Projects.FindAsync(projectId);
+            var projectQuery = _context.Projects
+                .Where(p => p.Id == projectId);
+
+            if (type.HasValue)
+            {
+                projectQuery = projectQuery
+                    .Include(p => p.Crashes
+                        .Where(p => p.Type == type)
+
+                        .OrderByDescending((c) => c.CreatedAt)
+                        .Skip((indexPage - 1) * sizePage)
+                        .Take(sizePage)
+                    );
+            }
+            else
+            {
+                projectQuery = projectQuery
+                  .Include(p => p.Crashes
+                    .OrderByDescending((c) => c.CreatedAt)
+                    .Skip((indexPage - 1) * sizePage)
+                    .Take(sizePage)
+                  );
+            }
+
+            var project = await projectQuery.SingleOrDefaultAsync();
+
             if (project == null)
                 return NotFound("Project does not exist");
 
-            var totalCount = await _context.Crashes
-                .Where(c => c.ProjectId == projectId)
-                .CountAsync();
+            var crashQuery = _context.Crashes.Where(c => c.ProjectId == projectId);
+
+            if (type.HasValue)
+                crashQuery = crashQuery.Where(p=> p.Type == type);
+
+            var totalCount = await crashQuery.CountAsync();
 
             var totalPages = (int)Math.Ceiling((double)totalCount / sizePage);
-
-            var crashes = await _context.Crashes
-                .Where(c => c.ProjectId == projectId)
-                .OrderByDescending(c => c.CreatedAt) 
-                .Skip((indexPage - 1) * sizePage)
-                .Take(sizePage)
-                .ToListAsync();
-
+           
             var result = new
             {
                 TotalCount = totalCount,
                 TotalPages = totalPages,
                 CurrentPage = indexPage,
-                PageSize = crashes.Count(),
-                Crashes = crashes.ToList(),
+                PageSize = project.Crashes.Count(),
+                Crashes = project.Crashes.ToList(),
             };
 
             return Ok(result);
